@@ -8,6 +8,7 @@ platform = {}
 player = {}
 score = 0
 coffee = {}
+platform2 = {}
 
 require 'assets'
 require 'constants'
@@ -51,6 +52,11 @@ function love.load()
   platform.height = 30
   platform.x = 0
   platform.y = WINDOW_HEIGHT / 2
+
+  platform2.x = WINDOW_WIDTH / 2 - 150
+  platform2.y = 300
+  platform2.width = 300
+  platform2.height = 25
 
   score = 0
   timer = 0
@@ -113,6 +119,17 @@ function love.update(dt)
     player.chattering = true
   end
 
+  if jumpcollides(player, platform2) then
+    player.ground = platform2.y - 100
+    player.y = platform2.y - 100
+  else
+    if player.y > platform.y -100 then
+      player.y = platform.y -100
+    end
+    player.ground = platform.y - 100
+    
+  end
+
 
 end
 
@@ -126,6 +143,7 @@ function love.draw()
 
   love.graphics.setColor(1, 0, 0, 1)
   love.graphics.rectangle('fill', platform.x, platform.y, platform.width, platform.height)
+  love.graphics.rectangle('fill', platform2.x, platform2.y, platform2.width, platform2.height)
   love.graphics.setFont(largefont)
   love.graphics.print('score: ' .. score)
   --love.graphics.print(timer, 50, 50)
@@ -151,6 +169,10 @@ end
 
 function collides(obj1, obj2)
   return not (obj1.y > obj2.y + 50 or obj1.x > obj2.x + 50 or obj2.y > obj1.y + 80 or obj2.x > obj1.x + 80)
+end
+
+function jumpcollides(obj1, obj2)
+  return not (obj1.x > obj2.x + obj2.width or obj2.x > obj1.x + 100 or obj1.y < platform2.y - platform2.height)
 end
 
 function generateCoffee()
