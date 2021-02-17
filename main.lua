@@ -9,13 +9,14 @@ player = {}
 score = 0
 coffee = {}
 platform2 = {}
+platform3 = {}
 
 require 'assets'
 require 'constants'
 
 function love.load()
 
-  love.window.setTitle('He Nose')
+  love.window.setTitle('coffee bot')
   love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT, {
     fullscreen = false
 })
@@ -36,14 +37,20 @@ function love.load()
 
   player.face = player.faces['face']
   player.chattering = false
-  player.x = WINDOW_WIDTH / 2
+  player.x = 25
   player.y = WINDOW_HEIGHT / 2 - player.faces['face']:getHeight()
+  player.ystable = player.y
   player.facesize = 1.0
   player.speed = 200
-  player.ground = player.y
+  player.groundstable = player.y
+  player.ground = player.groundstable
   player.y_velocity = 0
   player.jump_height = -300
   player.gravity = -500
+  player.jumping = false
+  player.height = 100
+  player.width = 100
+  player.onground = true
 
   coffee.x = 200
   coffee.y = 200
@@ -57,6 +64,11 @@ function love.load()
   platform2.y = 300
   platform2.width = 300
   platform2.height = 25
+
+  platform3.x = 200
+  platform3.y = 250
+  platform3.width = 200
+  platform3.height = 25
 
   score = 0
   timer = 0
@@ -80,22 +92,26 @@ function love.update(dt)
       player.x = player.x - (player.speed * dt)
       player.face = player.faces['faceleft']
     end
-  --else
-    --player.face = player.faces['face']
 	end
 
   if love.keyboard.isDown('space') then
+    player.jumping = true
+  end
+  if player.jumping then
 		if player.y_velocity == 0 then
 			player.y_velocity = player.jump_height
 		end
-	end
+  end
+  
 	if player.y_velocity ~= 0 then
 		player.y = player.y + player.y_velocity * dt
 		player.y_velocity = player.y_velocity - player.gravity * dt
-	end
+  end
+  
 	if player.y > player.ground then
-		player.y_velocity = 0
-    	player.y = player.ground
+		  player.y_velocity = 0
+      player.y = player.ground
+      player.jumping = false
   end
   
   if player.chattering then
@@ -119,17 +135,28 @@ function love.update(dt)
     player.chattering = true
   end
 
-  if jumpcollides(player, platform2) then
-    player.ground = platform2.y - 100
-    player.y = platform2.y - 100
-  else
-    if player.y > platform.y -100 then
-      player.y = platform.y -100
-    end
-    player.ground = platform.y - 100
-    
+
+  if collidesbottom(player, platform2) then
+    player.ground = platform2.y - player.height
+    player.onground = false
   end
 
+  if collidesbottom(player, platform3) then
+    player.ground = platform3.y - player.height
+    player.onground = false
+  end
+
+  if resetground(player, platform2) and resetground(player, platform3) and not player.onground then
+      player.ground = player.groundstable
+    if not player.jumping then
+      player.y = math.floor(player.y + player.speed * dt)
+    end
+    if player.y > player.groundstable then
+      player.onground = true
+    end
+  end
+
+ 
 
 end
 
@@ -144,6 +171,7 @@ function love.draw()
   love.graphics.setColor(1, 0, 0, 1)
   love.graphics.rectangle('fill', platform.x, platform.y, platform.width, platform.height)
   love.graphics.rectangle('fill', platform2.x, platform2.y, platform2.width, platform2.height)
+  love.graphics.rectangle('fill', platform3.x, platform3.y, platform3.width, platform3.height)
   love.graphics.setFont(largefont)
   love.graphics.print('score: ' .. score)
   --love.graphics.print(timer, 50, 50)
@@ -171,8 +199,24 @@ function collides(obj1, obj2)
   return not (obj1.y > obj2.y + 50 or obj1.x > obj2.x + 50 or obj2.y > obj1.y + 80 or obj2.x > obj1.x + 80)
 end
 
-function jumpcollides(obj1, obj2)
-  return not (obj1.x > obj2.x + obj2.width or obj2.x > obj1.x + 100 or obj1.y < platform2.y - platform2.height)
+function collidesbottom(obj1, obj2)
+  return (obj1.x + obj1.width > obj2.x and obj1.x < obj2.x + obj2.width and obj1.y + obj1.height < obj2.y)
+end
+
+function collidestop(obj1, obj2)
+  return not (obj1.x > obj2.x + obj2.width or obj2.x > obj1.x + 100)
+end
+
+function collidesright(obj1, obj2)
+  return not (obj1.x > obj2.x + obj2.width or obj2.x > obj1.x + 100)
+end
+
+function collidesleft(obj1, obj2)
+  return not (obj1.x > obj2.x + obj2.width or obj2.x > obj1.x + 100)
+end
+
+function resetground(obj1, obj2)
+  return (obj1.x + obj1.width < obj2.x or obj1.x > obj2.x + obj2.width)
 end
 
 function generateCoffee()
